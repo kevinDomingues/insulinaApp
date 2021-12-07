@@ -3,7 +3,6 @@ import React from 'react';
 import { StyleSheet, Text, View, Dimensions, Image, TouchableOpacity } from 'react-native';
 import * as Animatable from 'react-native-animatable';
 import { LinearGradient } from 'expo-linear-gradient';
-import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 
 
 const SplashScreen = ({navigation}) => {
@@ -17,25 +16,24 @@ const SplashScreen = ({navigation}) => {
         </View>
         <Animatable.View style={styles.footer}
             animation="fadeInUpBig"
+            duraton="1500"
         >
             <Text style={styles.title}>Improve your lifestyle</Text>
             <Text style={styles.text}>Sign in with your account</Text>
             <View style={styles.button}>
                 <TouchableOpacity onPress={()=>navigation.navigate('SignInScreen')}>
-                    <LinearGradient colors={['#08d4c4', '#01ab9d']}
-                        styles={styles.signIn}
+                    <LinearGradient 
+                        colors={['#35cc98', '#27ab7d']}
+                        style={styles.signIn}
                  >
                         <Text style={styles.textSign}>Get started</Text>
-                        <MaterialIcons name="navigate-next"
-                        color="#fff"
-                        size={20} />
                     </LinearGradient>
                 </TouchableOpacity>
             </View>
         </Animatable.View>
     </View>
   );
-}
+};
 
 export default SplashScreen;
 
@@ -74,11 +72,11 @@ const styles = StyleSheet.create({
       marginTop:5
   },
   button: {
-      alignItems: 'flex-end',
       marginTop: 30,
-      justifyContent: 'center'
+      alignItems: 'center'
   },
   signIn: {
+      marginTop: 50,
       width: 150,
       height: 40,
       justifyContent: 'center',
