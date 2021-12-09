@@ -81,7 +81,7 @@ const styles = StyleSheet.create({
       height: 40,
       justifyContent: 'center',
       alignItems: 'center',
-      borderRadius: 50,
+      borderRadius: 20,
       flexDirection: 'row'
   },
   textSign: {
