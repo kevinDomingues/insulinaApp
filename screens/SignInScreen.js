@@ -6,6 +6,8 @@ import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import Feather from 'react-native-vector-icons/Feather';
 import { validatePathConfig } from '@react-navigation/core';
 
+import { AuthContext } from '../components/context';
+
 
 const SignInScreen = ({navigation}) => {
 
@@ -15,6 +17,8 @@ const SignInScreen = ({navigation}) => {
       checkTextInputChange: false,
       secureTextEntry: true
   });
+
+  const { signIn } = React.useContext(AuthContext);
 
   const textInputChange = (val) => {
       if( val.length >= 1 ) {
@@ -46,6 +50,10 @@ const SignInScreen = ({navigation}) => {
       })
   }
 
+  const handleLogin = (email, password) => {
+      signIn(email, password);
+  }
+
   return (
     <View style={styles.container}>
         <Animatable.View animation="fadeInDown" style={styles.header}>
@@ -55,7 +63,7 @@ const SignInScreen = ({navigation}) => {
             <Text style={[styles.text_footer, {marginTop: 15}]}>Email</Text>
             <View style={styles.action}>
                 <FontAwesome name="user-o" color="#05375a" size={20}/>
-                <TextInput placeholder="Insert your email" style={styles.textInput} autoCapitalize="none" onChangeText={(val) => textInputChange(val)}/>
+                <TextInput placeholder="Email" style={styles.textInput} autoCapitalize="none" onChangeText={(val) => textInputChange(val)}/>
                 {data.checkTextInputChange ? 
                 <Animatable.View animation="bounceIn">
                     <Feather name="check-circle" color="green" size={20} />
@@ -76,7 +84,7 @@ const SignInScreen = ({navigation}) => {
             </View>
 
             <View style={styles.button}>
-                <TouchableOpacity style={styles.signIn}>
+                <TouchableOpacity style={styles.signIn} onPress={() => {handleLogin(data.email, data.password)}}>
                     <LinearGradient 
                         colors={['#35cc98', '#27ab7d']}
                         style={styles.signIn}

@@ -49,13 +49,13 @@ const SignUpScreen = ({navigation}) => {
   return (
     <View style={styles.container}>
         <View style={styles.header}>
-            <Text style={styles.text_header}>Register</Text>
+            <Text style={styles.text_header}>Sign Up</Text>
         </View>
         <Animatable.View style={styles.footer}>
             <Text style={[styles.text_footer, {marginTop: 15}]}>Email</Text>
             <View style={styles.action}>
                 <FontAwesome name="user-o" color="#05375a" size={20}/>
-                <TextInput placeholder="Insert your email" style={styles.textInput} autoCapitalize="none" onChangeText={(val) => textInputChange(val)}/>
+                <TextInput placeholder="Email" style={styles.textInput} autoCapitalize="none" onChangeText={(val) => textInputChange(val)}/>
                 {data.checkTextInputChange ? 
                 <Animatable.View animation="bounceIn">
                     <Feather name="check-circle" color="green" size={20} />
@@ -95,7 +95,7 @@ const SignUpScreen = ({navigation}) => {
                     >
                         <Text style={[styles.textSign, {
                             color:'#fff'
-                        }]}>Register</Text>
+                        }]}>Sign Up</Text>
                     </LinearGradient>
                 </TouchableOpacity>
                 
