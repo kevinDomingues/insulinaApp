@@ -3,12 +3,11 @@ import { StyleSheet, Text, View, ActivityIndicator } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { AuthContext } from './components/context';
 
+import MainNenu from './screens/MainMenu';
 import RootScreen from './screens/RootScreen';
-import { TouchableOpacity } from 'react-native-gesture-handler';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function App() {
- // const [isLoading, setIsLoading] = React.useState(false);
- // const [userToken, setUserToken] = React.useState(null);
 
   const firstLoginState = {
     isLoading: true,
@@ -51,15 +50,25 @@ export default function App() {
   const [loginState, dispatch] = React.useReducer(loginReducer, firstLoginState);
 
   const authContext = React.useMemo(() => ({
-    signIn: (userEmail, password) => {
+    signIn: async(userEmail, password) => {
       let userToken;
-      userEmail = null;
+      userToken = null;
       if( userEmail == 'teste@gmail.com' && password == 'pass') {
         userToken = 'temp';
+        try {
+          await AsyncStorage.setItem('userToken', userToken);
+        } catch (e) {
+          console.log(e);
+        }
       }
       dispatch({type: 'LOGIN', email: userEmail, token: userToken});
     },
-    signOut: () => {
+    signOut: async() => {
+      try {
+        await AsyncStorage.removeItem('userToken');
+      } catch (e) {
+        console.log(e);
+      }
       dispatch({type: 'LOGOUT'});
     },
     signUp: () => {
@@ -69,8 +78,14 @@ export default function App() {
   }), []);
 
   useEffect(() => {
-    setTimeout(() => {
-      dispatch({type: 'RETRIEVE_TOKEN', token: null});
+    setTimeout(async() => {
+      let userToken = null;
+      try {
+        userToken = await AsyncStorage.getItem('userToken');
+      } catch (e) {
+        console.log(e);
+      }
+      dispatch({type: 'RETRIEVE_TOKEN', token: userToken});
     }, 1000);
   }, []);
 
@@ -86,7 +101,7 @@ export default function App() {
     <AuthContext.Provider value={authContext}>
       <NavigationContainer>
         { loginState.userToken !== null ? (
-          <View><Text>Teste</Text></View>
+          <MainNenu />
         ) :
           <RootScreen />
         }    

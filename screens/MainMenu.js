@@ -4,8 +4,12 @@ import { StyleSheet, Text, View, Dimensions, Image, TouchableOpacity } from 'rea
 import * as Animatable from 'react-native-animatable';
 import { LinearGradient } from 'expo-linear-gradient';
 
+import { AuthContext } from '../components/context';
 
 const MainMenu = ({navigation}) => {
+  const { signOut } = React.useContext(AuthContext);
+
+
   return (
     <View style={styles.container}>
         <Animatable.View style={styles.header}>
@@ -15,15 +19,14 @@ const MainMenu = ({navigation}) => {
             animation="fadeInUpBig"
             duraton="1500"
         >
-            <Text style={styles.title}>Improve your lifestyle</Text>
-            <Text style={styles.text}>Sign in with your account</Text>
+            <Text style={styles.text}>Teste</Text>
             <View style={styles.button}>
-                <TouchableOpacity onPress={()=>navigation.navigate('SignInScreen')}>
+                <TouchableOpacity onPress={() => {signOut()}}>
                     <LinearGradient 
                         colors={['#35cc98', '#27ab7d']}
                         style={styles.signIn}
                  >
-                        <Text style={styles.textSign}>Get started</Text>
+                        <Text style={styles.textSign}>LogOut</Text>
                     </LinearGradient>
                 </TouchableOpacity>
             </View>
