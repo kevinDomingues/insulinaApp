@@ -5,6 +5,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import Feather from 'react-native-vector-icons/Feather';
 import { validatePathConfig } from '@react-navigation/core';
+import { URL } from '../components/apiURL';
 
 import { AuthContext } from '../components/context';
 
@@ -15,8 +16,23 @@ const SignInScreen = ({navigation}) => {
       email: '',
       password: '',
       checkTextInputChange: false,
-      secureTextEntry: true
+      secureTextEntry: true,
+      error: null
   });
+
+  const getLoginResponse = async (userEmail, password) => {
+    try {
+      let response = await fetch(
+        `${URL}/user/login/${userEmail}?pass=${password}`
+        );
+      
+      let json = await response.json();
+
+      return json;
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
   const { signIn } = React.useContext(AuthContext);
 
@@ -50,8 +66,22 @@ const SignInScreen = ({navigation}) => {
       })
   }
 
-  const handleLogin = (email, password) => {
-      signIn(email, password);
+  const handleError = (error) => {
+      setData({
+          ...data,
+          error: error
+      })
+  }
+
+  const handleLogin = async (email, password) => {
+      let userToken = await getLoginResponse(email, password);
+      if(userToken.token){
+        handleError('') 
+        signIn(userToken.token, email);
+      } 
+      else if(userToken.message) {
+          handleError(userToken.message);
+        };
   }
 
   return (
@@ -103,6 +133,12 @@ const SignInScreen = ({navigation}) => {
                     <Text style={[styles.textSign, {color: '#27ab7d'}]}>Sign Up</Text> 
                 </TouchableOpacity>
             </View>
+            { data.error !== null ? 
+            <Animatable.View animation="bounceIn" style={styles.signIn}>
+                <Text style={styles.errorMsg}>{data.error}</Text>
+            </Animatable.View>
+             : null
+             }
         </Animatable.View>
     </View>
   );
@@ -156,11 +192,12 @@ const styles = StyleSheet.create({
         flex: 1,
         marginTop: Platform.OS === 'ios' ? 0 : -12,
         paddingLeft: 10,
-        color: '#05375a',
+        color: '#05375a'
     },
     errorMsg: {
         color: '#FF0000',
-        fontSize: 14,
+        fontSize: 17,
+        fontWeight: 'bold'
     },
     button: {
         alignItems: 'center',

@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { StyleSheet, Text, View, ActivityIndicator } from 'react-native';
+import { StyleSheet, Text, View, ActivityIndicator, Alert } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { AuthContext } from './components/context';
 
@@ -50,17 +50,13 @@ export default function App() {
   const [loginState, dispatch] = React.useReducer(loginReducer, firstLoginState);
 
   const authContext = React.useMemo(() => ({
-    signIn: async(userEmail, password) => {
-      let userToken;
-      userToken = null;
-      if( userEmail == 'teste@gmail.com' && password == 'pass') {
-        userToken = 'temp';
-        try {
-          await AsyncStorage.setItem('userToken', userToken);
-        } catch (e) {
-          console.log(e);
-        }
+    signIn: async(userToken, userEmail) => { 
+      try {
+        await AsyncStorage.setItem('userToken', userToken);
+      } catch (e) {
+        console.log(e);
       }
+      
       dispatch({type: 'LOGIN', email: userEmail, token: userToken});
     },
     signOut: async() => {
