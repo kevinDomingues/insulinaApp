@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { StyleSheet, Text, View, ActivityIndicator, Alert } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { AuthContext } from './components/context';
+import { TokenContext } from './components/context';
 
 import MainNenu from './screens/MainMenu';
 import RootScreen from './screens/RootScreen';
@@ -95,6 +96,7 @@ export default function App() {
 
   return (
     <AuthContext.Provider value={authContext}>
+      <TokenContext.Provider value={loginState.userToken}>
       <NavigationContainer>
         { loginState.userToken !== null ? (
           <MainNenu />
@@ -102,6 +104,7 @@ export default function App() {
           <RootScreen />
         }    
       </NavigationContainer>
+      </TokenContext.Provider>
     </AuthContext.Provider>
   );
 }

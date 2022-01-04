@@ -1,6 +1,6 @@
 import React, { useEffect, useContext } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { View, Text, StyleSheet, Dimensions, TouchableOpacity} from 'react-native';
+import { View, Text, StyleSheet, Dimensions, TouchableOpacity, TextInput} from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
@@ -9,6 +9,7 @@ import { AuthContext } from '../components/context';
 import { TokenContext } from '../components/context';
 import { URL } from '../components/apiURL';
 import { formatDate } from '../components/dateFormatter';
+import { ImcCalculation } from '../components/Calculations';
 
 
 const dms = {
@@ -16,9 +17,10 @@ const dms = {
   width:Dimensions.get('window').width,
 }
 
-const ProfileScreen = ({navigation}) => {
+const RegisterGlucoseLevels = ({navigation}) => {
 
     const [user, setUser] = React.useState([]);
+    const [loading, setLoading] = React.useState(true);
 
     const userToken = useContext(TokenContext);
 
@@ -31,6 +33,7 @@ const ProfileScreen = ({navigation}) => {
         let json = await response.json();
   
         setUser(json);
+        setLoading(false);
       } catch (error) {
         console.error(error);
       }
@@ -46,10 +49,7 @@ const ProfileScreen = ({navigation}) => {
         <View style={styles.header}>
           <View style={{width: dms.width, flexDirection: 'column', alignItems: 'flex-start', marginBottom: 30}}>
             <View style={{flexDirection: 'row', alignItems: 'center', marginLeft: 20}}>
-              <View style={styles.profilePic}>
-                <FontAwesome name="user-o" color="#05375a" size={60}/>
-              </View>
-              <Text style={{marginLeft: 20, ...styles.title}}>{user.name}</Text>
+              <Text style={{marginLeft: 20, ...styles.title}}>Register Glucose Levels</Text>
             </View>
           </View>
         </View>
@@ -57,52 +57,40 @@ const ProfileScreen = ({navigation}) => {
         <View style={styles.footer}>
           <View style={styles.card}>
             <View style={styles.item}>
-              <MaterialCommunityIcons name="email" color="#05375a" size={30}/>
-              <View>
-                <Text style={styles.infoSecondaryText}>Email</Text>
-                <Text style={styles.infoText}>{user.email}</Text>
+              <MaterialCommunityIcons name="water-percent" color="#05375a" size={30}/>
+              <View style={styles.action}>             
+                <TextInput style={styles.textInput} placeholder='Glucose Level mg/dL' keyboardType='decimal-pad' maxLength={6}/>
               </View>
             </View>
             <View style={styles.item}>
-              <MaterialCommunityIcons name="phone" color="#05375a" size={30}/>
-              <View>
-                <Text style={styles.infoSecondaryText}>Contacto</Text>
-                <Text style={styles.infoText}>{user.contact}</Text>
+              <MaterialCommunityIcons name="food" color="#05375a" size={30}/>
+              <View style={styles.action}>
+                <TextInput style={styles.textInput} placeholder='Carbohydrates' keyboardType='decimal-pad' maxLength={6}/>
               </View>
             </View>
-            <View style={styles.item}>
-              <MaterialCommunityIcons name="human-male-height" color="#05375a" size={30}/>
-              <View>
-                <Text style={styles.infoSecondaryText}>Height</Text>
-                <Text style={styles.infoText}>{user.height} m</Text>
-              </View>
-            </View> 
             <View style={styles.item}>
               <MaterialCommunityIcons name="weight" color="#05375a" size={30}/>
-              <View>
-                <Text style={styles.infoSecondaryText}>Weight</Text>
-                <Text style={styles.infoText}>{user.weight} kg</Text>
+              <View style={styles.action}>
+                {loading === true ? ( 
+                 <TextInput style={styles.textInput} placeholder='Weight' keyboardType='decimal-pad' maxLength={6}/>
+                 ) : 
+                 <TextInput style={styles.textInput} placeholder='Weight' keyboardType='decimal-pad' onChangeText={(value) => setUser({...user, weight: value})} value={user.weight.toString()} maxLength={6}/>
+                }
+                <Text style={styles.infoText}> kg</Text>
               </View>
             </View>
             <View style={styles.item}>
-              <MaterialCommunityIcons name="water-percent" color="#05375a" size={30}/>
+              <MaterialCommunityIcons name="heart-pulse" color="#05375a" size={30}/>
               <View>
-                <Text style={styles.infoSecondaryText}>Min Glucose level</Text>
-                <Text style={styles.infoText}>{user.minGlicose} mg/dL</Text>
+                <Text style={styles.infoSecondaryText}>Imc</Text>
+                <Text style={styles.infoText}>{ImcCalculation(user.weight, user.height)} %</Text>
               </View>
             </View>  
             <View style={styles.item}>
-              <MaterialCommunityIcons name="water-percent" color="#05375a" size={30}/>
-              <View>
-                <Text style={styles.infoSecondaryText}>Max Glucose level</Text>
-                <Text style={styles.infoText}>{user.maxGlicose} mg/dL</Text>
-              </View>
-            </View>   
-            <View style={styles.item}>
               <MaterialCommunityIcons name="calendar-month" color="#05375a" size={30}/>
               <View>
-                <Text style={styles.infoSecondaryText}>Birthday Date</Text>
-                <Text style={styles.infoText}>{formatDate(user.birthdayDate, 2)}</Text>
+                <Text style={styles.infoSecondaryText}>Date</Text>
+                <Text style={styles.infoText}>{formatDate(Date.now(), 1)}</Text>
               </View>
             </View>
             <TouchableOpacity style={{alignItems: 'center'}} onPress={()=>signOut()}>
@@ -110,7 +98,7 @@ const ProfileScreen = ({navigation}) => {
                     colors={['#7f8b8f', '#748c94']}
                     style={styles.button}
               >
-                    <Text style={{color: '#fff', fontWeight: 'bold'}}>Logout</Text>
+                    <Text style={{color: '#fff', fontWeight: 'bold'}}>Register</Text>
                 </LinearGradient>
             </TouchableOpacity>  
           </View>
@@ -119,7 +107,7 @@ const ProfileScreen = ({navigation}) => {
     );
 };
 
-export default ProfileScreen;
+export default RegisterGlucoseLevels;
 
 const styles = StyleSheet.create({
   container: {
@@ -183,7 +171,7 @@ const styles = StyleSheet.create({
   },
   title: {
     color: '#fff',
-    fontSize: 25,
+    fontSize: 46,
     fontWeight: 'bold',
     textShadowColor: '#a3a3a3',
     textShadowOffset: {width: 0, height: 0},
@@ -198,5 +186,18 @@ const styles = StyleSheet.create({
     textShadowOffset: {width: 0, height: 0},
     textShadowRadius: 5,
     marginLeft: 20,
-  }
+  },
+  textInput: {
+    paddingLeft: 10,
+    color: '#000',
+    fontSize: 18
+  },
+  action: {
+    flexDirection: 'row',
+    width: '80%',
+    marginTop: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f2f2f2',
+    paddingBottom: 5
+  },
 });

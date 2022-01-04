@@ -22,8 +22,14 @@ const SignInScreen = ({navigation}) => {
 
   const getLoginResponse = async (userEmail, password) => {
     try {
+        const requestOptions = {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: userEmail, password: password })
+        }
+    
       let response = await fetch(
-        `${URL}/user/login/${userEmail}?pass=${password}`
+        `${URL}/user/login`, requestOptions
         );
       
       let json = await response.json();
@@ -197,7 +203,6 @@ const styles = StyleSheet.create({
     errorMsg: {
         color: '#FF0000',
         fontSize: 17,
-        fontWeight: 'bold'
     },
     button: {
         alignItems: 'center',

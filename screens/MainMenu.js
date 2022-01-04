@@ -1,7 +1,5 @@
 import React from 'react';
-import * as Animatable from 'react-native-animatable';
 import {StyleSheet, Text, View, TouchableOpacity, Image} from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -37,11 +35,12 @@ const CustomButton = ({children, onPress}) => (
 );
 
 
-const MainMenu = ({navigation}) => {
+const MainMenu = ({navigation, userToken}) => {
 
   return (
       <Tab.Navigator initialRouteName="Home" screenOptions={{
         tabBarShowLabel: false,
+        headerShown: false,
         tabBarStyle: { 
             position: 'absolute',
             bottom: 25,
