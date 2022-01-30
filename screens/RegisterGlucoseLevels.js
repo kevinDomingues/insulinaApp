@@ -1,15 +1,14 @@
 import React, { useEffect, useContext } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { View, Text, StyleSheet, Dimensions, TouchableOpacity, TextInput} from 'react-native';
+import { View, Text, StyleSheet, Dimensions, TouchableOpacity, TextInput, Modal} from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 
-import { AuthContext } from '../components/context';
 import { TokenContext } from '../components/context';
 import { URL } from '../components/apiURL';
 import { formatDate } from '../components/dateFormatter';
-import { ImcCalculation } from '../components/Calculations';
+import { ImcCalculation, getInsulinToTake } from '../components/Calculations';
 
 
 const dms = {
@@ -19,12 +18,24 @@ const dms = {
 
 const RegisterGlucoseLevels = ({navigation}) => {
 
-    const [user, setUser] = React.useState([]);
-    const [loading, setLoading] = React.useState(true);
+    const [modalVisible, setModalVisible] = React.useState(false);
+    const [secondModalVisible, setsecondModalVisible] = React.useState(false);
+    const [data, setData] = React.useState({
+      glucoseLevel: '',
+      carbohydrates: '',
+      weight: '',
+      height: '',
+      minGlucose: '',
+      maxGlucose: '',
+      imc: '',
+      error: null
+    });
+    const [calc, setCalc] = React.useState({
+      message: '',
+      doses: null
+    });
 
     const userToken = useContext(TokenContext);
-
-    const { signOut } = React.useContext(AuthContext);
 
     const getUser = async (id) => {
       try {      
@@ -32,12 +43,98 @@ const RegisterGlucoseLevels = ({navigation}) => {
         
         let json = await response.json();
   
-        setUser(json);
-        setLoading(false);
+        setData({
+          ...data,
+          weight: json.weight,
+          height: json.height,
+          minGlucose: json.minGlicose,
+          maxGlucose: json.maxGlicose
+        });
       } catch (error) {
         console.error(error);
       }
     };
+
+    const weightChanges = (val) => {
+      setData({
+        ...data,
+        weight: val,
+        imc: ImcCalculation(val, data.height)
+      })
+    }
+
+    const glucoseChanges = (val) => {
+      setData({
+        ...data,
+        glucoseLevel: val
+      })
+    }
+
+    const carbohydratesChanges = (val) => {
+      setData({
+        ...data,
+        carbohydrates: val
+      })
+    }
+
+    const prepareCalculations = async (id) =>  {
+      try {  
+        let response = await fetch(`${URL}/registoIns/getLatest/${id}`);
+        
+        let json = await response.json();
+  
+        let lastRecordDate = json.dataHora;
+        let lastInsulinIntake = json.qtInsulina;
+        
+        let calculation = getInsulinToTake(data.minGlucose, data.maxGlucose, data.carbohydrates, data.glucoseLevel, data.weight, lastRecordDate, lastInsulinIntake);
+
+        setCalc({
+          ...calc,
+          message: calculation.message,
+          doses: calculation.doses
+        });
+        setsecondModalVisible(true);
+      } catch (error) {
+        console.error(error);
+      }
+    }
+
+    const register = async (id) => {
+      try {
+        setData({
+          ...data,
+          error: null
+        })
+        const requestOptions = {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ idUser: id, qtGlicose: data.glucoseLevel, qtHidratos: data.carbohydrates, dataHora: new Date(), tipoRegisto: 1, peso: data.weight, imc: data.imc})
+        }
+    
+      let response = await fetch(
+        `${URL}/registo/new`, requestOptions
+        );
+      
+      let json = await response.json();
+
+      if(json.error){
+        setData({
+          ...data,
+          error: json.error
+        })
+      } else{
+        navigation.navigate('RegisterInsulinIntake', {
+          glucoseLevel: data.glucoseLevel,
+          carbohydrates: data.carbohydrates,
+          doses: calc.doses
+          })
+      }
+
+      return json;
+    } catch (error) {
+      console.error(error);
+    }
+    }
 
     useEffect(() => {
       getUser(userToken);
@@ -46,6 +143,58 @@ const RegisterGlucoseLevels = ({navigation}) => {
     return (
       <View style={styles.container}>
         <StatusBar style={{backgroundColor: '#28b584'}}/>
+        <Modal
+          animationType="slide"
+          transparent={true}
+          visible={modalVisible}
+          onRequestClose={() => {
+            setModalVisible(!modalVisible);
+          }}
+        >
+          <View style={{...styles.centeredView, ...styles.shadow}}>
+            <View style={styles.modalView}>
+              <Text style={styles.modalText}>Do you wish to calculate the required insulin doses?</Text>
+              <TouchableOpacity
+                style={[styles.button, styles.buttonClose]}
+                onPress={() => {
+                  prepareCalculations(userToken);
+                  setModalVisible(!modalVisible);
+                }}
+              >
+                <Text style={styles.textStyle}>Yes</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.button, styles.buttonClose]}
+                onPress={() => setModalVisible(!modalVisible)}
+              >
+                <Text style={styles.textStyle}>Hide Modal</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+        <Modal
+          animationType="slide"
+          transparent={true}
+          visible={secondModalVisible}
+          onRequestClose={() => {
+            setsecondModalVisible(!secondModalVisible);
+          }}
+        >
+          <View style={{...styles.centeredView, ...styles.shadow}}>
+            <View style={styles.modalView}>
+              <Text style={styles.modalText}>{calc.message}</Text>
+              <TouchableOpacity
+                style={[styles.button, styles.buttonClose]}
+                onPress={() => {
+                  register(userToken);
+                  setModalVisible(!modalVisible);
+                }}
+              >
+                <Text style={styles.textStyle}>Continue</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
         <View style={styles.header}>
           <View style={{width: dms.width, flexDirection: 'column', alignItems: 'flex-start', marginBottom: 30}}>
             <View style={{flexDirection: 'row', alignItems: 'center', marginLeft: 20}}>
@@ -59,23 +208,19 @@ const RegisterGlucoseLevels = ({navigation}) => {
             <View style={styles.item}>
               <MaterialCommunityIcons name="water-percent" color="#05375a" size={30}/>
               <View style={styles.action}>             
-                <TextInput style={styles.textInput} placeholder='Glucose Level mg/dL' keyboardType='decimal-pad' maxLength={6}/>
+                <TextInput style={styles.textInput} placeholder='Glucose Level mg/dL' keyboardType='decimal-pad' onChangeText={(value) => glucoseChanges(value)} maxLength={6}/>
               </View>
             </View>
             <View style={styles.item}>
               <MaterialCommunityIcons name="food" color="#05375a" size={30}/>
               <View style={styles.action}>
-                <TextInput style={styles.textInput} placeholder='Carbohydrates' keyboardType='decimal-pad' maxLength={6}/>
+                <TextInput style={styles.textInput} placeholder='Carbohydrates' keyboardType='decimal-pad' onChangeText={(value) => carbohydratesChanges(value)} maxLength={6}/>
               </View>
             </View>
             <View style={styles.item}>
               <MaterialCommunityIcons name="weight" color="#05375a" size={30}/>
               <View style={styles.action}>
-                {loading === true ? ( 
-                 <TextInput style={styles.textInput} placeholder='Weight' keyboardType='decimal-pad' maxLength={6}/>
-                 ) : 
-                 <TextInput style={styles.textInput} placeholder='Weight' keyboardType='decimal-pad' onChangeText={(value) => setUser({...user, weight: value})} value={user.weight.toString()} maxLength={6}/>
-                }
+                <TextInput style={styles.textInput} placeholder='Weight' keyboardType='decimal-pad' onChangeText={(value) => weightChanges(value)} value={data.weight.toString()} maxLength={6}/>
                 <Text style={styles.infoText}> kg</Text>
               </View>
             </View>
@@ -83,7 +228,7 @@ const RegisterGlucoseLevels = ({navigation}) => {
               <MaterialCommunityIcons name="heart-pulse" color="#05375a" size={30}/>
               <View>
                 <Text style={styles.infoSecondaryText}>Imc</Text>
-                <Text style={styles.infoText}>{ImcCalculation(user.weight, user.height)} %</Text>
+                <Text style={styles.infoText}>{data.imc} %</Text>
               </View>
             </View>  
             <View style={styles.item}>
@@ -93,7 +238,7 @@ const RegisterGlucoseLevels = ({navigation}) => {
                 <Text style={styles.infoText}>{formatDate(Date.now(), 1)}</Text>
               </View>
             </View>
-            <TouchableOpacity style={{alignItems: 'center'}} onPress={()=>signOut()}>
+            <TouchableOpacity style={{alignItems: 'center'}} onPress={() => setModalVisible(true)}>
                 <LinearGradient 
                     colors={['#7f8b8f', '#748c94']}
                     style={styles.button}
@@ -122,12 +267,12 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
   },
   footer: {
-      alignSelf: 'stretch',
-      flex: 5,
-      backgroundColor: '#fff',
-      height: dms.height*0.5,
-      borderTopRightRadius: dms.width*0.1,
-      borderTopLeftRadius: dms.width*0.1
+    alignSelf: 'stretch',
+    flex: 5,
+    backgroundColor: '#fff',
+    height: dms.height*0.5,
+    borderTopRightRadius: dms.width*0.1,
+    borderTopLeftRadius: dms.width*0.1
   },
   button: {
     marginTop: 10,
@@ -199,5 +344,26 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#f2f2f2',
     paddingBottom: 5
+  },
+  centeredView: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: 22
+  },
+  modalView: {
+    margin: 20,
+    backgroundColor: "#fff",
+    borderRadius: 20,
+    padding: 35,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5
   },
 });

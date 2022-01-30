@@ -4,6 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { createStackNavigator } from '@react-navigation/stack';
 
 import RegisterGlucoseLevels from './RegisterGlucoseLevels';
+import RegisterInsulinIntake from './RegisterInsulinIntake';
 
 const dms = {
   height:Dimensions.get('window').height,
@@ -22,7 +23,10 @@ const OptionsScreen = ({navigation}) => {
           }}>
           <Text style={styles.title}>Choose an option</Text>
           <TouchableOpacity style={{...styles.button,alignItems: 'center', borderColor: '#05375a', borderWidth: 1,
-                marginTop: 15}}>               
+                marginTop: 15}} onPress={()=>{navigation.navigate('RegisterInsulinIntake', {
+                  glucoseLevel: '',
+                  carbohydrates: ''
+                  })}}>               
             <Text style={{color: '#27ab7d', fontWeight: 'bold'}}>Register insulin intake</Text>           
           </TouchableOpacity>  
           <TouchableOpacity style={{...styles.button,alignItems: 'center', borderColor: '#05375a', borderWidth: 1,
@@ -46,6 +50,7 @@ const RegisterScreen = ({navigation}) => {
     }}>
       <RootStack.Screen name="OptionsScreen" component={OptionsScreen}/>
       <RootStack.Screen name="RegisterGlucoseLevels" component={RegisterGlucoseLevels}/>
+      <RootStack.Screen name="RegisterInsulinIntake" component={RegisterInsulinIntake}/>
     </RootStack.Navigator>
   )  
 };
