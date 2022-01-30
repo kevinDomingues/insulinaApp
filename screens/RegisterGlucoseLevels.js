@@ -3,6 +3,7 @@ import { StatusBar } from 'expo-status-bar';
 import { View, Text, StyleSheet, Dimensions, TouchableOpacity, TextInput, Modal} from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import * as Animatable from 'react-native-animatable';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 
 import { TokenContext } from '../components/context';
@@ -93,7 +94,14 @@ const RegisterGlucoseLevels = ({navigation}) => {
           message: calculation.message,
           doses: calculation.doses
         });
-        setsecondModalVisible(true);
+        if(data.carbohydrates!='' && data.glucoseLevel!=''){
+          setsecondModalVisible(true);
+        } else {
+          setData({
+            ...data,
+            error: "You have empty inputs!"
+          })
+        }
       } catch (error) {
         console.error(error);
       }
@@ -186,8 +194,8 @@ const RegisterGlucoseLevels = ({navigation}) => {
               <TouchableOpacity
                 style={[styles.button, styles.buttonClose]}
                 onPress={() => {
+                  setModalVisible(!secondModalVisible);
                   register(userToken);
-                  setModalVisible(!modalVisible);
                 }}
               >
                 <Text style={styles.textStyle}>Continue</Text>
@@ -247,6 +255,12 @@ const RegisterGlucoseLevels = ({navigation}) => {
                 </LinearGradient>
             </TouchableOpacity>  
           </View>
+          { data.error !== null ? 
+            <Animatable.View animation="bounceIn" style={{alignItems: 'center'}}>
+                <Text style={styles.errorMsg}>{data.error}</Text>
+            </Animatable.View>
+             : null
+             }
         </View>
     </View>
     );
@@ -366,4 +380,8 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 5
   },
+  errorMsg: {
+    color: '#FF0000',
+    fontSize: 17,
+},
 });

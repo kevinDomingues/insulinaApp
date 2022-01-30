@@ -22,7 +22,6 @@ export const getInsulinToTake = (minGlucose, maxGlucose, carbohydrates, glucoseL
     let periods = diffMins / 10;
     let insAtiva = 0;
     let isAnyActiveInsulin = false;
-    periods = 10;
 
     if(periods < 24){
         insAtiva = lastInsulinIntake - periods*(lastInsulinIntake/24);
