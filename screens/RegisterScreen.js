@@ -25,7 +25,8 @@ const OptionsScreen = ({navigation}) => {
           <TouchableOpacity style={{...styles.button,alignItems: 'center', borderColor: '#05375a', borderWidth: 1,
                 marginTop: 15}} onPress={()=>{navigation.navigate('RegisterInsulinIntake', {
                   glucoseLevel: '',
-                  carbohydrates: ''
+                  carbohydrates: '',
+                  doses: ''
                   })}}>               
             <Text style={{color: '#27ab7d', fontWeight: 'bold'}}>Register insulin intake</Text>           
           </TouchableOpacity>  

@@ -5,6 +5,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import * as Animatable from 'react-native-animatable';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
+import DateTimePicker from '@react-native-community/datetimepicker';
 
 import { TokenContext } from '../components/context';
 import { URL } from '../components/apiURL';
@@ -29,6 +30,7 @@ const RegisterGlucoseLevels = ({navigation}) => {
       minGlucose: '',
       maxGlucose: '',
       imc: '',
+      date: new Date(),
       error: null
     });
     const [calc, setCalc] = React.useState({
@@ -36,11 +38,22 @@ const RegisterGlucoseLevels = ({navigation}) => {
       doses: null
     });
 
+    const [mode, setMode] = React.useState('date');
+    const [show, setShow] = React.useState(false);
+
     const userToken = useContext(TokenContext);
 
-    const getUser = async (id) => {
+    const getUser = async (token) => {
       try {      
-        let response = await fetch(`${URL}/user/${id}`);
+        const requestOptions = {
+          method: 'GET',
+          headers: { 
+            'Content-Type': 'application/json',
+            'x-access-token': `${token}`
+         },
+        }   
+
+        let response = await fetch(`${URL}/user/me`, requestOptions);
         
         let json = await response.json();
   
@@ -49,7 +62,8 @@ const RegisterGlucoseLevels = ({navigation}) => {
           weight: json.weight,
           height: json.height,
           minGlucose: json.minGlicose,
-          maxGlucose: json.maxGlicose
+          maxGlucose: json.maxGlicose,
+          imc: ImcCalculation(json.weight, json.height)
         });
       } catch (error) {
         console.error(error);
@@ -78,9 +92,39 @@ const RegisterGlucoseLevels = ({navigation}) => {
       })
     }
 
-    const prepareCalculations = async (id) =>  {
+    const onChange = (event, selectedDate) => {
+      const currentDate = selectedDate || data.date;
+      setShow(Platform.OS === 'ios');
+      setData({
+        ...data,
+        date: currentDate
+      });
+    };
+
+    const showMode = (currentMode) => {
+      setShow(true);
+      setMode(currentMode);
+    };
+  
+    const showDatepicker = () => {
+      showMode('date');
+    };
+  
+    const showTimepicker = () => {
+      showMode('time');
+    };
+
+    const prepareCalculations = async (token) =>  {
       try {  
-        let response = await fetch(`${URL}/registoIns/getLatest/${id}`);
+        const requestOptions = {
+          method: 'GET',
+          headers: { 
+            'Content-Type': 'application/json',
+            'x-access-token': `${token}`
+         },
+        }   
+
+        let response = await fetch(`${URL}/registoIns/getLatest`, requestOptions);
         
         let json = await response.json();
   
@@ -107,7 +151,7 @@ const RegisterGlucoseLevels = ({navigation}) => {
       }
     }
 
-    const register = async (id) => {
+    const register = async (token) => {
       try {
         setData({
           ...data,
@@ -115,8 +159,11 @@ const RegisterGlucoseLevels = ({navigation}) => {
         })
         const requestOptions = {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ idUser: id, qtGlicose: data.glucoseLevel, qtHidratos: data.carbohydrates, dataHora: new Date(), tipoRegisto: 1, peso: data.weight, imc: data.imc})
+            headers: { 
+              'Content-Type': 'application/json',
+              'x-access-token': `${token}`
+            },
+            body: JSON.stringify({ qtGlicose: data.glucoseLevel, qtHidratos: data.carbohydrates, dataHora: data.date, tipoRegisto: 1, peso: data.weight, imc: data.imc})
         }
     
       let response = await fetch(
@@ -131,11 +178,15 @@ const RegisterGlucoseLevels = ({navigation}) => {
           error: json.error
         })
       } else{
-        navigation.navigate('RegisterInsulinIntake', {
-          glucoseLevel: data.glucoseLevel,
-          carbohydrates: data.carbohydrates,
-          doses: calc.doses
-          })
+        if(calc.doses>0){
+          navigation.navigate('RegisterInsulinIntake', {
+            glucoseLevel: data.glucoseLevel,
+            carbohydrates: data.carbohydrates,
+            doses: calc.doses
+            })
+        } else{
+          navigation.navigate('HomeMainScreen');
+        } 
       }
 
       return json;
@@ -163,19 +214,28 @@ const RegisterGlucoseLevels = ({navigation}) => {
             <View style={styles.modalView}>
               <Text style={styles.modalText}>Do you wish to calculate the required insulin doses?</Text>
               <TouchableOpacity
-                style={[styles.button, styles.buttonClose]}
+                style={{...styles.button, ...styles.buttonClose, width: 100}}
                 onPress={() => {
                   prepareCalculations(userToken);
                   setModalVisible(!modalVisible);
                 }}
-              >
-                <Text style={styles.textStyle}>Yes</Text>
+              ><LinearGradient 
+                  colors={['#35cc98', '#27ab7d']}
+                  style={styles.buttonGradient}>
+                  <Text style={{...styles.textStyle, color: '#fff'}}>Yes</Text>
+                </LinearGradient>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.button, styles.buttonClose]}
-                onPress={() => setModalVisible(!modalVisible)}
-              >
-                <Text style={styles.textStyle}>Hide Modal</Text>
+                style={{...styles.button, ...styles.buttonClose, width: 100}}
+                onPress={() => {
+                  setModalVisible(!modalVisible);
+                  register(userToken);
+                }}
+              ><LinearGradient 
+                  colors={['#cf0000', '#b00000']}
+                  style={styles.buttonGradient}>
+                  <Text style={{...styles.textStyle, color: '#fff'}}>No</Text>
+                </LinearGradient>
               </TouchableOpacity>
             </View>
           </View>
@@ -192,13 +252,27 @@ const RegisterGlucoseLevels = ({navigation}) => {
             <View style={styles.modalView}>
               <Text style={styles.modalText}>{calc.message}</Text>
               <TouchableOpacity
-                style={[styles.button, styles.buttonClose]}
+                style={{...styles.button, ...styles.buttonClose, width: 100}}
                 onPress={() => {
-                  setModalVisible(!secondModalVisible);
+                  setsecondModalVisible(!secondModalVisible);
                   register(userToken);
                 }}
-              >
-                <Text style={styles.textStyle}>Continue</Text>
+              ><LinearGradient 
+                  colors={['#35cc98', '#27ab7d']}
+                  style={styles.buttonGradient}>
+                  <Text style={{...styles.textStyle, color: '#fff'}}>Continue</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={{...styles.button, ...styles.buttonClose, width: 100}}
+                onPress={() => {
+                  setsecondModalVisible(!secondModalVisible);
+                }}
+              ><LinearGradient 
+                  colors={['#cf0000', '#b00000']}
+                  style={styles.buttonGradient}>
+                  <Text style={{...styles.textStyle, color: '#fff'}}>Cancel</Text>
+                </LinearGradient>
               </TouchableOpacity>
             </View>
           </View>
@@ -243,12 +317,30 @@ const RegisterGlucoseLevels = ({navigation}) => {
               <MaterialCommunityIcons name="calendar-month" color="#05375a" size={30}/>
               <View>
                 <Text style={styles.infoSecondaryText}>Date</Text>
-                <Text style={styles.infoText}>{formatDate(Date.now(), 1)}</Text>
+                <Text style={styles.infoText}>{formatDate(data.date, 1)}</Text>
+                {show && (
+                <DateTimePicker
+                  testID="dateTimePicker"
+                  value={data.date}
+                  mode={mode}
+                  is24Hour={true}
+                  display="default"
+                  onChange={onChange}
+                />
+              )}
+              </View>
+              <View style={{flexDirection: 'row', marginLeft:10}}>
+                <TouchableOpacity style={{alignItems: 'center', marginLeft: 25}} onPress={showDatepicker}>
+                  <MaterialCommunityIcons name="calendar-search" color="#05375a" size={30}/>
+                </TouchableOpacity>
+                <TouchableOpacity style={{alignItems: 'center', marginLeft: 25}} onPress={showTimepicker}>
+                  <MaterialCommunityIcons name="table-clock" color="#05375a" size={30}/>
+                </TouchableOpacity>    
               </View>
             </View>
             <TouchableOpacity style={{alignItems: 'center'}} onPress={() => setModalVisible(true)}>
                 <LinearGradient 
-                    colors={['#7f8b8f', '#748c94']}
+                    colors={['#35cc98', '#27ab7d']}
                     style={styles.button}
               >
                     <Text style={{color: '#fff', fontWeight: 'bold'}}>Register</Text>
@@ -296,6 +388,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: 20,
     flexDirection: 'row'
+  },
+  buttonGradient: {
+    width: '100%',
+    height: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 10
   },
   card: {
     alignSelf: 'stretch',

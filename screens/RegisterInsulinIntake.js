@@ -1,14 +1,15 @@
 import React, { useEffect, useContext } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { View, Text, StyleSheet, Dimensions, TouchableOpacity, TextInput} from 'react-native';
+import { View, Text, StyleSheet, Dimensions, TouchableOpacity, TextInput, Picker} from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import * as Animatable from 'react-native-animatable';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
+import DateTimePicker from '@react-native-community/datetimepicker';
 
 import { TokenContext } from '../components/context';
 import { URL } from '../components/apiURL';
 import { formatDate } from '../components/dateFormatter';
-import { ImcCalculation } from '../components/Calculations';
 
 
 const dms = {
@@ -22,8 +23,13 @@ const RegisterInsulinIntake = ({route, navigation}) => {
         glucoseLevel: '',
         carbohydrates: '',
         doses: '',
-        type: ''
+        tipoInsulina: 1,
+        date: new Date(),
+        error: null
       });
+
+    const [mode, setMode] = React.useState('date');
+    const [show, setShow] = React.useState(false);
   
     const { glucoseLevel, carbohydrates, doses } = route.params;
 
@@ -50,6 +56,70 @@ const RegisterInsulinIntake = ({route, navigation}) => {
     })
     }
 
+    const handleTipoInsulinaChange = (val) => {
+      setData({
+        ...data,
+        tipoInsulina: val
+      })
+    }
+
+    const onChange = (event, selectedDate) => {
+      const currentDate = selectedDate || data.date;
+      setShow(Platform.OS === 'ios');
+      setData({
+        ...data,
+        date: currentDate
+      });
+    };
+  
+    const showMode = (currentMode) => {
+      setShow(true);
+      setMode(currentMode);
+    };
+  
+    const showDatepicker = () => {
+      showMode('date');
+    };
+  
+    const showTimepicker = () => {
+      showMode('time');
+    };
+
+    const register = async (token) => {
+      try {
+        setData({
+          ...data,
+          error: null
+        })
+        const requestOptions = {
+            method: 'POST',
+            headers: { 
+              'Content-Type': 'application/json',
+              'x-access-token': `${token}`
+            },
+            body: JSON.stringify({ qtGlicose: data.glucoseLevel, qtHidratos: data.carbohydrates, dataHora: data.date, qtInsulina: data.doses, tipoInsulina: data.tipoInsulina})
+        }
+    
+      let response = await fetch(
+        `${URL}/registoIns/new`, requestOptions
+        );
+      
+      let json = await response.json();
+
+      if(json.error){
+        setData({
+          ...data,
+          error: json.error
+        })
+      } else{
+        navigation.navigate('HomeMainScreen')
+      }
+
+      return json;
+    } catch (error) {
+      console.error(error);
+    }
+    }
 
     useEffect(() => {
         setData({
@@ -74,7 +144,22 @@ const RegisterInsulinIntake = ({route, navigation}) => {
         <View style={styles.footer}>
           <View style={styles.card}>
             <View style={styles.item}>
-              <MaterialCommunityIcons name="weight" color="#05375a" size={30}/>
+              <MaterialCommunityIcons name="beaker-alert" color="#05375a" size={30}/>
+              <View>
+                <Text style={styles.infoSecondaryText}>Type</Text>
+                <Picker
+                  selectedValue={data.tipoInsulina}
+                  style={{ marginLeft: 10, height: 50, width: 150}}
+                  onValueChange={(itemValue, itemIndex) => handleTipoInsulinaChange(itemValue)}
+                >
+                  <Picker.Item label="Bazal" value="1" />
+                  <Picker.Item label="Bolus" value="2" />
+                  <Picker.Item label="Post" value="3" />
+                </Picker>
+              </View>
+            </View>
+            <View style={styles.item}>
+              <MaterialCommunityIcons name="heart-flash" color="#05375a" size={30}/>
               <View style={styles.action}>
                 <TextInput style={styles.textInput} placeholder='Insulin doses' keyboardType='decimal-pad' onChangeText={(value) => dosesChanges(value)} value={data.doses.toString()} maxLength={6}/>
                 <Text style={styles.infoText}> doses</Text>
@@ -96,17 +181,41 @@ const RegisterInsulinIntake = ({route, navigation}) => {
               <MaterialCommunityIcons name="calendar-month" color="#05375a" size={30}/>
               <View>
                 <Text style={styles.infoSecondaryText}>Date</Text>
-                <Text style={styles.infoText}>{formatDate(Date.now(), 1)}</Text>
+                <Text style={styles.infoText}>{formatDate(data.date, 1)}</Text>
+                {show && (
+                <DateTimePicker
+                  testID="dateTimePicker"
+                  value={data.date}
+                  mode={mode}
+                  is24Hour={true}
+                  display="default"
+                  onChange={onChange}
+                />
+              )}
+              </View>
+              <View style={{flexDirection: 'row', marginLeft:10}}>
+                <TouchableOpacity style={{alignItems: 'center', marginLeft: 25}} onPress={showDatepicker}>
+                  <MaterialCommunityIcons name="calendar-search" color="#05375a" size={30}/>
+                </TouchableOpacity>
+                <TouchableOpacity style={{alignItems: 'center', marginLeft: 25}} onPress={showTimepicker}>
+                  <MaterialCommunityIcons name="table-clock" color="#05375a" size={30}/>
+                </TouchableOpacity>    
               </View>
             </View>
-            <TouchableOpacity style={{alignItems: 'center'}} >
+            <TouchableOpacity style={{alignItems: 'center'}} onPress={() => register(userToken)}>
                 <LinearGradient 
-                    colors={['#7f8b8f', '#748c94']}
+                    colors={['#35cc98', '#27ab7d']}
                     style={styles.button}
               >
                     <Text style={{color: '#fff', fontWeight: 'bold'}}>Register</Text>
                 </LinearGradient>
-            </TouchableOpacity>  
+            </TouchableOpacity>
+            { data.error !== null ? 
+            <Animatable.View animation="bounceIn" style={{alignItems: 'center'}}>
+                <Text style={styles.errorMsg}>{data.error}</Text>
+            </Animatable.View>
+             : null
+             }  
           </View>
         </View>
     </View>
@@ -206,4 +315,8 @@ const styles = StyleSheet.create({
     borderBottomColor: '#f2f2f2',
     paddingBottom: 5
   },
+  errorMsg: {
+    color: '#FF0000',
+    fontSize: 17,
+},
 });
