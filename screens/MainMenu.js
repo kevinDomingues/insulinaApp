@@ -70,7 +70,7 @@ const MainMenu = ({navigation, userToken}) => {
                 </View> ),
             }} />
             <Tab.Screen name="Register" component={RegisterScreen}
-            options={{ tabBarIcon: ({ focused }) => (
+            options={{ unmountOnBlur:true, tabBarIcon: ({ focused }) => (
                 <Image
                     source={require('../assets/plus.png')}
                     resizeMode="contain"

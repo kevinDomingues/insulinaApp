@@ -1,6 +1,6 @@
 import React, { useEffect, useContext } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { View, Text, TextInput, StyleSheet, Dimensions, ScrollView, TouchableOpacity, SafeAreaView, FlatList, Picker} from 'react-native';
+import { View, Text, TextInput, StyleSheet, Dimensions, ScrollView, TouchableOpacity, SafeAreaView, FlatList, Picker, Modal} from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Animatable from 'react-native-animatable';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -8,6 +8,7 @@ import { createStackNavigator } from '@react-navigation/stack';
 import ToastManager, { Toast } from 'toastify-react-native';
 import { useIsFocused } from '@react-navigation/native';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { LineChart } from "react-native-chart-kit";
 
 import { TokenContext } from '../components/context';
 import { URL } from '../components/apiURL';
@@ -22,7 +23,12 @@ const dms = {
 const HomeMainScreen = ({navigation}) => {
     const isFocused = useIsFocused();
 
+    const [modalVisible, setModalVisible] = React.useState(false);
     const [lastRecord, setLastRecord] = React.useState([]);
+    const [records, setRecords] = React.useState({
+        labels: [],
+        info: [],
+    });
     const [user, setUser] = React.useState();
     const [lastInsulina, setLastInsulina] = React.useState([]);
 
@@ -42,6 +48,36 @@ const HomeMainScreen = ({navigation}) => {
         let json = await response.text();
 
         setUser(json);
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    const getRecords = async (token) => {
+      try {
+        const requestOptions = {
+          method: 'GET',
+          headers: { 
+            'Content-Type': 'application/json',
+            'x-access-token': `${token}`
+         },
+        }      
+        let response = await fetch(`${URL}/registo/getRecordsInversed`, requestOptions);
+        
+        let json = await response.json();
+        let rec = ({
+          labels: [],
+          info: [],
+        });
+
+        json.forEach(element => {
+          if(!rec.labels.includes(formatDate(element.dataHora, 2))){
+            rec.labels.push(formatDate(element.dataHora, 2));
+            rec.info.push(element.qtGlicose);
+          }
+        });
+
+        setRecords(rec);
       } catch (error) {
         console.error(error);
       }
@@ -89,11 +125,70 @@ const HomeMainScreen = ({navigation}) => {
       getUserName(userToken);
       getLastRecord(userToken);
       getLastInsRecord(userToken);
+      getRecords(userToken);
     }, [isFocused]);
   
     return (
       <View style={styles.container}>
         <StatusBar style={{backgroundColor: '#28b584'}}/>
+        <Modal
+          animationType="slide"
+          transparent={true}
+          visible={modalVisible}
+          onRequestClose={() => {
+            setModalVisible(!modalVisible);
+          }}
+        >
+          <View style={{...styles.centeredView, ...styles.shadow}}>
+            <View style={styles.modalView}>
+              <LineChart
+                data={{
+                  labels: records.labels,
+                  datasets: [
+                    {
+                      data: records.info
+                    }
+                  ],
+                  legend: ["Glucose Levels (mg/dL)"]
+                }}
+                width={dms.width}
+                height={220}
+                yAxisInterval={1} 
+                chartConfig={{
+                  backgroundColor: "#35cc98",
+                  backgroundGradientFrom: "#35cc98",
+                  backgroundGradientTo: "#27ab7d",
+                  decimalPlaces: 2,
+                  color: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
+                  labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
+                  style: {
+                    borderRadius: 16,
+                  },
+                  propsForDots: {
+                    r: "6",
+                    strokeWidth: "2",
+                    stroke: "#27ab7d"
+                  }
+                }}
+                bezier
+                style={{
+                  marginVertical: 0,
+                  borderRadius: 16
+                }}
+              />
+              <TouchableOpacity style={{marginBottom: 30, marginTop: 20}}
+                onPress={() => {
+                  setModalVisible(!modalVisible);
+                }}
+              ><LinearGradient 
+                  colors={['#35cc98', '#27ab7d']}
+                  style={{...styles.button}}>
+                  <Text style={{...styles.textStyle, color: '#fff'}}>Close</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
         <Animatable.View animation="fadeInDown" duraton="1500" style={styles.header}>
           <LinearGradient colors={['#35cc98', '#27ab7d']}>
             
@@ -206,7 +301,17 @@ const HomeMainScreen = ({navigation}) => {
                   <Text style={styles.infoText}>{lastRecord.qtHidratos}</Text>
                 </View>
               </View>
-            </TouchableOpacity>            
+            </TouchableOpacity>
+                        
+          </Animatable.View>
+          <Animatable.View animation="fadeInRightBig" duraton="3000" style={{
+            ...styles.card,
+            ...styles.shadow
+          }}>
+            <TouchableOpacity style={{...styles.button, width: '100%'}} onPress={() => setModalVisible(!modalVisible)}>
+              <Text style={{fontSize: 24, fontWeight: 'bold', color: "#05375a"}}>View Graphic</Text>
+            </TouchableOpacity>
+                        
           </Animatable.View>
           </View>
           )}
@@ -1132,16 +1237,6 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 8
   },
-  shadow: {
-    shadowColor: '#a3a3a3',
-    shadowOffset: {
-        width: 0,
-        height: 10,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 8
-  },
   title: {
     color: '#fff',
     fontSize: 46,
@@ -1168,5 +1263,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: 20,
     flexDirection: 'row'
+  },
+  modalView: {
+    backgroundColor: "#fff",
+    borderRadius: 30,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5
+  },
+  centeredView: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: 22
   },
 });
