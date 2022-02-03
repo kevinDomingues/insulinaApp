@@ -24,7 +24,6 @@ const dms = {
 const FoodMainScreen = ({navigation}) => {
     const isFocused = useIsFocused();
 
-    const [lastFood, setLastFood] = React.useState([]);
     const [foods, setFoods] = React.useState([]);
     const [user, setUser] = React.useState({
       weight: 0,
@@ -48,19 +47,19 @@ const FoodMainScreen = ({navigation}) => {
         let response = await fetch(`${URL}/user/me`, requestOptions);
         
         let json = await response.json();
-  
+
         setUser({
-          ...user,
           weight: json.weight,
-          height: json.height
+          height: json.height,
         });
-        calcs(json.weight); 
+  
+        getFoods(token, json.weight);
       } catch (error) {
         console.error(error);
       }
     };
 
-    const getFoods = async (token) => {
+    const getFoods = async (token, weight) => {
       const requestOptions = {
         method: 'GET',
         headers: { 
@@ -75,21 +74,21 @@ const FoodMainScreen = ({navigation}) => {
         let json = await response.json();
   
         setFoods(json);
+        calcs(json, weight);
       } catch (error) {
         console.error(error);
       }
     };
 
-    const calcs = async (weight) => {
-      let calc = getHC(foods, weight);
-      setUser({
-        qtHidratosAvailable: calc.availableCarbs,
-        qtHidratos: calc.totalCarbs
-      })
+    const calcs = async (foods, weight) => {
+        let calc = getHC(foods, weight);
+        setUser({
+          qtHidratosAvailable: calc.availableCarbs,
+          qtHidratos: calc.totalCarbs
+        });
     }
 
     useEffect(() => {
-      getFoods(userToken);
       getUser(userToken);
     }, [isFocused]);
 
