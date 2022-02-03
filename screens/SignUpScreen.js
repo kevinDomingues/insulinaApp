@@ -5,6 +5,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import Feather from 'react-native-vector-icons/Feather';
 import { validatePathConfig } from '@react-navigation/core';
+import { URL } from '../components/apiURL';
 
 
 const SignUpScreen = ({navigation}) => {
@@ -12,8 +13,11 @@ const SignUpScreen = ({navigation}) => {
   const [data, setData] = React.useState({
       email: '',
       password: '',
+      password2: '',
       checkTextInputChange: false,
-      secureTextEntry: true
+      secureTextEntry: true,
+      secureTextEntry2: true,
+      error: null
   });
 
   const textInputChange = (val) => {
@@ -32,11 +36,36 @@ const SignUpScreen = ({navigation}) => {
       }
   }
 
+  const getEmailAvailable = async (userEmail) => {
+    try {
+        const requestOptions = {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' },
+        }
+    
+      let response = await fetch(
+        `${URL}/user/check/${userEmail}`, requestOptions
+        );
+      
+      let json = await response.json();
+
+      return json;
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
   const passwordInputChange = (val) => {
       setData({
           ...data,
           password: val
       });
+  }
+  const passwordInputChange2 = (val) => {
+    setData({
+        ...data,
+        password2: val
+    });
   }
 
   const hidePassword = () => {
@@ -44,6 +73,42 @@ const SignUpScreen = ({navigation}) => {
           ...data,
           secureTextEntry: !data.secureTextEntry
       })
+  }
+
+  const hidePassword2 = () => {
+    setData({
+        ...data,
+        secureTextEntry2: !data.secureTextEntry2
+    })
+  }
+
+  const handleError = (error) => {
+    setData({
+        ...data,
+        error: error
+    })
+  }
+
+  const handleSignUp = async(email, password, password2) => {
+    handleError('');
+    if(email === '' || password === '' || password2 === ''){
+        handleError('Fill all inputs!');
+        return;
+    }
+    if(password!==password2){
+        handleError('Password must be the same!');
+        return;
+    }
+    let available = await getEmailAvailable(email);
+    if(available.valid === false){
+        handleError('This email is already in use!');
+        return;
+    } else if(available.valid === true){
+        navigation.navigate('CompleteProfileScreen', {
+            email: data.email,
+            password: data.password
+        });
+    }
   }
 
   return (
@@ -77,9 +142,9 @@ const SignUpScreen = ({navigation}) => {
             <Text style={[styles.text_footer, {marginTop: 25}]}>Confirm Password</Text>
             <View style={styles.action}>
                 <Feather name="lock" color="#05375a" size={20}/>
-                <TextInput secureTextEntry={data.secureTextEntry ? true : false} placeholder="Password" style={styles.textInput} autoCapitalize="none" onChangeText={(val) => passwordInputChange(val)}/>
-                <TouchableOpacity onPress={hidePassword}>
-                    {data.secureTextEntry ? 
+                <TextInput secureTextEntry={data.secureTextEntry2 ? true : false} placeholder="Password" style={styles.textInput} autoCapitalize="none" onChangeText={(val) => passwordInputChange2(val)}/>
+                <TouchableOpacity onPress={hidePassword2}>
+                    {data.secureTextEntry2 ? 
                     <Feather name="eye-off" color="grey" size={20} />
                     :
                     <Feather name="eye" color="grey" size={20} />
@@ -88,7 +153,7 @@ const SignUpScreen = ({navigation}) => {
             </View>
 
             <View style={styles.button}>
-                <TouchableOpacity style={styles.signIn}>
+                <TouchableOpacity style={styles.signIn} onPress={() => handleSignUp(data.email, data.password, data.password2)}>
                     <LinearGradient 
                         colors={['#35cc98', '#27ab7d']}
                         style={styles.signIn}
@@ -107,6 +172,12 @@ const SignUpScreen = ({navigation}) => {
                     <Text style={[styles.textSign, {color: '#27ab7d'}]}>Back</Text> 
                 </TouchableOpacity>
             </View>
+            { data.error !== null ? 
+            <Animatable.View animation="bounceIn" style={styles.signIn}>
+                <Text style={styles.errorMsg}>{data.error}</Text>
+            </Animatable.View>
+             : null
+             }
         </Animatable.View>
     </View>
   );
@@ -180,5 +251,9 @@ const styles = StyleSheet.create({
     textSign: {
         fontSize: 18,
         fontWeight: 'bold'
-    }
+    },
+    errorMsg: {
+        color: '#FF0000',
+        fontSize: 17,
+    },
   });

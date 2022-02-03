@@ -136,8 +136,6 @@ const ProfileMainScreen = ({navigation}) => {
     );
 };
 
-// onChangeText={(value) => glucoseChanges(value)} 
-
 const ProfileEditScreen = ({navigation}) => {
 
   const [user, setUser] = React.useState({

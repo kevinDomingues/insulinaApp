@@ -3,6 +3,7 @@ import { StyleSheet, Text, View, ActivityIndicator, Alert } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { AuthContext } from './components/context';
 import { TokenContext } from './components/context';
+import { URL } from './components/apiURL';
 
 import MainNenu from './screens/MainMenu';
 import RootScreen from './screens/RootScreen';
@@ -14,6 +15,28 @@ export default function App() {
     isLoading: true,
     email: null,
     userToken: null,
+  };
+
+  const checkToken = async (token) => {
+    try {
+        const requestOptions = {
+            method: 'GET',
+            headers: { 
+              'Content-Type': 'application/json',
+              'x-access-token': `${token}` 
+            }
+        }
+    
+      let response = await fetch(
+        `${URL}/user/checkToken`, requestOptions
+        );
+      
+      let json = await response.json();
+
+      return json;
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   const loginReducer = (prevState, action) => {
@@ -38,13 +61,6 @@ export default function App() {
           userEmail: null,
           isLoading: false,
         };
-      case 'REGISTER':
-        return {
-          ...prevState,
-          userToken: action.token,
-          userEmail: action.email,
-          isLoading: false,
-        };
     }
   }
 
@@ -67,11 +83,7 @@ export default function App() {
         console.log(e);
       }
       dispatch({type: 'LOGOUT'});
-    },
-    signUp: () => {
-    //  setUserToken('rmekmrkes');
-    //  setIsLoading(false);
-    },
+    }
   }), []);
 
   useEffect(() => {
@@ -83,6 +95,14 @@ export default function App() {
         console.log(e);
       }
       dispatch({type: 'RETRIEVE_TOKEN', token: userToken});
+
+      if(userToken!==null){
+        let tokenValid = await checkToken(userToken);
+        
+        if(!(typeof tokenValid === 'object' && !Array.isArray(tokenValid) && tokenValid !== null)){
+          dispatch({type: 'LOGOUT'});
+        }
+      }  
     }, 1000);
   }, []);
 
