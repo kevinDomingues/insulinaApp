@@ -18,18 +18,21 @@ const dms = {
   width:Dimensions.get('window').width,
 }
 
-const RegisterGlucoseLevels = ({navigation}) => {
+const RegisterGlucoseLevels = ({route, navigation}) => {
+
+  const { glucoseLevel, tipoRegisto } = route.params;
 
     const [modalVisible, setModalVisible] = React.useState(false);
     const [secondModalVisible, setsecondModalVisible] = React.useState(false);
     const [data, setData] = React.useState({
-      glucoseLevel: '',
-      carbohydrates: '',
+      glucoseLevel: 0,
+      carbohydrates: 0,
       weight: '',
       height: '',
       minGlucose: '',
       maxGlucose: '',
       imc: '',
+      tipoRegisto: 1,
       date: new Date(),
       error: null
     });
@@ -163,7 +166,7 @@ const RegisterGlucoseLevels = ({navigation}) => {
               'Content-Type': 'application/json',
               'x-access-token': `${token}`
             },
-            body: JSON.stringify({ qtGlicose: data.glucoseLevel, qtHidratos: data.carbohydrates, dataHora: data.date, tipoRegisto: 1, peso: data.weight, imc: data.imc})
+            body: JSON.stringify({ qtGlicose: data.glucoseLevel, qtHidratos: data.carbohydrates, dataHora: data.date, tipoRegisto: data.tipoRegisto, peso: data.weight, imc: data.imc})
         }
     
       let response = await fetch(
@@ -196,6 +199,11 @@ const RegisterGlucoseLevels = ({navigation}) => {
     }
 
     useEffect(() => {
+      setData({
+        ...data,
+        glucoseLevel: glucoseLevel,
+        tipoRegisto: tipoRegisto
+      });
       getUser(userToken);
     }, []);
   

@@ -1,6 +1,6 @@
 import React, { useEffect, useContext } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { View, Text, TextInput, StyleSheet, Dimensions, ScrollView, TouchableOpacity, SafeAreaView, FlatList, Picker, Modal} from 'react-native';
+import { View, Text, TextInput, StyleSheet, Dimensions, ScrollView, TouchableOpacity, SafeAreaView, FlatList, Picker, Modal, Linking} from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Animatable from 'react-native-animatable';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -236,7 +236,7 @@ const HomeMainScreen = ({navigation}) => {
                   <MaterialCommunityIcons name="beaker-alert" color="#05375a" size={30}/>
                   <View>
                     <Text style={styles.infoSecondaryText}>Type</Text>
-                    <Text style={styles.infoText}>Bazal</Text>
+                    <Text style={styles.infoText}>{lastInsulina.tipoInsulina === 1 ? 'Bazal' : lastInsulina.tipoInsulina === 2 ? 'Bolus' : lastInsulina.tipoInsulina === 3 && 'Post'}</Text>
                   </View>
                 </View>
                 <View style={styles.item}>
@@ -310,6 +310,14 @@ const HomeMainScreen = ({navigation}) => {
           }}>
             <TouchableOpacity style={{...styles.button, width: '100%'}} onPress={() => setModalVisible(!modalVisible)}>
               <Text style={{fontSize: 24, fontWeight: 'bold', color: "#05375a"}}>View Graphic</Text>
+            </TouchableOpacity>
+          </Animatable.View>
+          <Animatable.View animation="fadeInRightBig" duraton="3000" style={{
+            ...styles.card,
+            ...styles.shadow
+          }}>
+            <TouchableOpacity style={{...styles.button, width: '100%'}} onPress={() => Linking.openURL(`tel:112`)}>
+              <Text style={{fontSize: 24, fontWeight: 'bold', color: "#05375a"}}>Emergency Call</Text>
             </TouchableOpacity>
                         
           </Animatable.View>
@@ -394,7 +402,7 @@ const ViewInsulinScreen = ({navigation}) => {
           <MaterialCommunityIcons name="beaker-alert" color="#05375a" size={30}/>
             <View>
               <Text style={styles.ListinfoSecondaryText}>Type</Text>
-              <Text style={styles.ListinfoText}>{record.tipoInsulina === 1 ? 'Bazal' : 'Bolus'}</Text>
+              <Text style={styles.ListinfoText}>{record.tipoInsulina === 1 ? 'Bazal' : record.tipoInsulina === 2 ? 'Bolus' : record.tipoInsulina === 3 && 'Post'}</Text>
             </View>
           </View>
           <View style={styles.item}>
@@ -448,7 +456,7 @@ const ViewInsulinScreen = ({navigation}) => {
             <MaterialCommunityIcons name="beaker-alert" color="#05375a" size={30}/>
             <View>
               <Text style={styles.infoSecondaryText}>Type</Text>
-              <Text style={styles.infoText}>{lastRecord.tipoInsulina == 1 ? 'Bazal' : 'Bolus'} </Text>
+              <Text style={styles.infoText}>{lastRecord.tipoInsulina === 1 ? 'Bazal' : lastRecord.tipoInsulina === 2 ? 'Bolus' : 'Post'} </Text>
             </View>
           </View>
         </View>

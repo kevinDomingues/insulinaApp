@@ -25,11 +25,11 @@ const CompleteProfileScreen = ({route, navigation}) => {
       username: '',
       email: '',
       password: '',
-      contact: 0,
-      minGlicose: 0,
-      maxGlicose: 0,
-      height: 0,
-      weight: 0,
+      contact: '',
+      minGlicose: '',
+      maxGlicose: '',
+      height: '',
+      weight: '',
       birthdayDate: new Date(),
     });
   
